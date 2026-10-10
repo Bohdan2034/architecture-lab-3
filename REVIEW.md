@@ -45,12 +45,29 @@
 - Код Reports і Notifications, якщо вони споживають лише нормалізовані статуси системи; їхні дубльовані mapping-файли можна видалити або замінити використанням контракту Payments без поширення provider-specific знань.
 - Бізнес-логіка Checkout, не пов'язана з вибором провайдера, статусами оплати, резервуванням залишків або передаванням параметрів розрахунку.
 
+
 ## Actual impact
 
 **Actual files changed:**
 
-Заповнити після завершення рефакторингу, за результатами `git diff` та `git status`.
+- `src/checkout/CheckoutController.ts` — використовує спільний контракт Orders і розрахунок total.
+- `src/config.ts` — містить налаштування провайдера, податку та знижки.
+- `src/inventory/StockRepository.ts` — реалізує резервування та повернення залишків.
+- `src/orders/OrderService.ts` — координує резервування, оплату та стан замовлення.
+- `src/payments/PaymentProvider.ts` — визначає спільний платіжний контракт.
+- `src/payments/PaymentService.ts` і `src/payments/providerFactory.ts` — надають сервіс і вибір провайдера.
+- `src/payments/adapters/StripeAdapter.ts` і `src/payments/adapters/WalletAdapter.ts` — реалізують адаптери.
+- `src/payments/internal/StripeClient.ts` — містить локальну реалізацію клієнта Stripe.
+- `src/shared/calculateTotal.ts` — розраховує суму без мутації вхідних позицій.
+- `tests/checkout.functional.test.ts` — перевіряє поведінку Checkout.
+- `tests/calculateTotal.test.ts`, `tests/paymentProviders.test.ts` і `tests/stockRepository.test.ts` — перевіряють нові контракти та поведінку.
+- `scripts/check-architecture.mjs` і `package.json` — додають автоматичну перевірку архітектурних меж.
+- `README.md`, `DECISIONS.md`, `ADR-001-payments-boundary.md` і `REVIEW.md` — описують рішення, запуск і фактичний результат.
 
 **Difference from prediction and explanation:**
 
-Заповнити після реалізації. Порівняти прогнозований список файлів із фактичним, пояснити кожну суттєву відмінність і вказати, чи вдалося локалізувати зміни в модулях-власниках.
+Зміни зосереджені переважно в Payments, Inventory, Orders, Checkout та shared calculation. Для другого провайдера створено окремий адаптер без зміни публічного формату відповіді Checkout. Архітектурні перевірки винесено в окремий скрипт. Частина прогнозованих файлів, зокрема модулі Reports і Notifications, не входить до поточного набору змінених файлів за результатом `git status`; їхню фактичну участь слід оцінювати за diff, а не вважати зміненими автоматично.
+
+**Verification:**
+
+`npm test` — 22 тести пройшли. `npm run check:architecture` — перевірено 15 TypeScript-файлів без виявлених порушень. `git diff --check` показав лише попередження про перетворення LF/CRLF для окремих файлів.
