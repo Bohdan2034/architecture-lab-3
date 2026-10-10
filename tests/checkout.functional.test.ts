@@ -39,6 +39,7 @@ test("failed payment keeps the existing API behaviour", async () => {
 
   assert.equal(response.paymentStatus, "failed");
   assert.equal(response.status, "payment_pending");
+  assert.equal(database.stock.get("book")?.available, 5);
 });
 
 test("checkout rejects an unavailable product", async () => {

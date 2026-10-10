@@ -1,6 +1,5 @@
 import { calculateTotal, type CartLine } from "../shared/calculateTotal.ts";
 import { OrderService } from "../orders/OrderService.ts";
-import type { StripePayload } from "../payments/internal/StripeClient.ts";
 
 export type CheckoutRequest = {
   orderId: string;
@@ -17,21 +16,19 @@ export class CheckoutController {
   }
 
   async checkout(request: CheckoutRequest) {
-    const total = calculateTotal(request.lines);
-
-    // Deliberate leak: transport/controller code knows Stripe's payload shape.
-    const stripePayload: StripePayload = {
-      id: request.paymentToken,
-      amount: Math.round(total * 100),
-      currency: request.currency,
-      metadata: { orderId: request.orderId },
-    };
+    const total = calculateTotal(request.lines, {
+  taxRate: 0.2,
+  discountPercent: 0,
+});
 
     const order = await this.orders.placeOrder(
       request.orderId,
       request.lines,
       total,
-      stripePayload,
+      {
+        paymentToken: request.paymentToken,
+        currency: request.currency,
+      },
     );
 
     return {
