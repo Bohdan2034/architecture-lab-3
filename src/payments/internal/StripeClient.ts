@@ -1,6 +1,3 @@
-// Deliberate boundary violation: Payments reaches into Orders internals.
-import { markOrderPaid } from "../../orders/internal/orderMutations.ts";
-
 export type StripePayload = {
   id: string;
   amount: number;
@@ -15,9 +12,13 @@ export type StripeResponse = {
 
 export class StripeClient {
   async createCharge(payload: StripePayload): Promise<StripeResponse> {
-    const state = payload.id.startsWith("fail_") ? "declined" : "succeeded";
-    const response: StripeResponse = { charge_id: `ch_${payload.id}`, state };
-    markOrderPaid(payload.metadata.orderId, state === "succeeded" ? "paid" : "failed");
-    return response;
+    const state = payload.id.startsWith("fail_")
+      ? "declined"
+      : "succeeded";
+
+    return {
+      charge_id: `ch_${payload.id}`,
+      state,
+    };
   }
 }
